@@ -22,7 +22,7 @@ function render(vnode, container) {
   const dom = document.createElement(vnode.tag);
 
   if(vnode.attrs) {
-    Object.keys(node.attrs).forEach(key => {
+    Object.keys(vnode.attrs).forEach(key => {
       const value = vnode.attrs[key];
       setAttribute(dom, key, value);
     });
@@ -36,14 +36,36 @@ function render(vnode, container) {
 }
 
 function setAttribute(dom, name, value) {
-  
+  if(name === 'className') name = 'class';
+
+  if(/on\w+/.test(name)){
+    name = name.toLowerCase();
+    dom[name] = value || '';
+  } else if(name==='style') {
+    if(!value || typeof value === 'string'){
+      dom.style.cssText = value||'';
+    } else if(value && typeof value === 'object'){
+      for(let name in value) {
+        dom.style[name] = value[name];
+      }
+    } else {
+      if(name in dom){
+        dom[name] = value||'';
+      }
+      if(value){
+        dom.setAttribute(name, value);
+      } else {
+        dom.removeAttribute(name, value);
+      }
+    }
+  }
 }
 
 function tick() {
   const element = (
     <div>
-      <h1>hello, world!</h1>
-      <h2>It is {new Date().toLocaleTimeString()}.</h2>
+      <h1 style="color: red">hello, world!</h1>
+      <h2 style={{textDecoration: 'underline'}}>It is {new Date().toLocaleTimeString()}.</h2>
     </div>
   );
 
