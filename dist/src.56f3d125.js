@@ -103,23 +103,24 @@ parcelRequire = (function (modules, cache, entry, globalName) {
 
   // Override the current require with this new one
   return newRequire;
-})({"src/index.js":[function(require,module,exports) {
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+})({"src/react-dom/render.js":[function(require,module,exports) {
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+exports.createElement = createElement;
+exports.renderComponent = renderComponent;
+exports.render = render;
 
-var React = {
-  createElement: createElement
-};
+var _Component = require('../react/Component');
 
-var ReactDOM = {
-  render: function render(vnode, container) {
-    container.innerHTML = "";
-    return _render2(vnode, container);
-  }
-};
+var _Component2 = _interopRequireDefault(_Component);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function createElement(tag, attrs) {
   for (var _len = arguments.length, children = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
@@ -129,41 +130,45 @@ function createElement(tag, attrs) {
   return { tag: tag, attrs: attrs, children: children };
 }
 
-function _render2(vnode, container) {
-  return container.appendChild(_render(vnode));
+function renderComponent(component) {
+  var base = void 0;
+  var renderer = component.render();
+
+  //更新前生命周期
+  if (component.base && component.componentWillUpdate) {
+    component.componentWillUpdate();
+  }
+
+  base = _render(renderer);
+
+  if (component.base) {
+    //更新后生命周期
+    if (component.componentDidUpdate) component.componentDidUpdate();
+  } else if (component.componentDidMount) {
+    //挂载后生命周期
+    component.componentDidMount();
+  }
+
+  if (component.base && component.base.parentNode) {
+    component.base.parentNode.replaceChild(base, component.base);
+  }
+
+  component.base = base;
+  //为何记录base._component
+  base._component = component;
 }
 
-function _render(vnode) {
-
-  if (vnode === undefined || vnode === null || typeof vnode === 'boolean') vnode = '';
-
-  if (typeof vnode === 'number') return String(vnode);
-
-  if (typeof vnode === 'string') {
-    var textNode = document.createTextNode(vnode);
-    return container.appendChild(textNode);
+function setComponentProps(component, props) {
+  if (!component.base) {
+    //挂载前生命周期
+    if (component.componentWillMount) component.componentWillMount();
+  } else {
+    //props更新前生命周期
+    component.componentWillReceiveProps(props);
   }
 
-  var dom = document.createElement(vnode.tag);
-
-  if (vnode.attrs) {
-    Object.keys(vnode.attrs).forEach(function (key) {
-      var value = vnode.attrs[key];
-      setAttribute(dom, key, value);
-    });
-  }
-
-  if (typeof vnode === 'function') {
-    var component = createComponent(vnode.tag, vnode.atrrs);
-    setComponentProps(component, vnode.attrs);
-    return component.base;
-  }
-
-  vnode.children.forEach(function (child) {
-    _render2(child, dom);
-  });
-
-  return dom;
+  component.props = props;
+  renderComponent(component);
 }
 
 function createComponent(component, props) {
@@ -171,12 +176,13 @@ function createComponent(component, props) {
   if (component.prototype && component.prototype.render) {
     inst = new component(props);
   } else {
-    inst = new Component(props);
+    inst = new _Component2.default(props);
     inst.constructor = component;
     inst.render = function () {
       return this.constructor(props);
     };
   }
+  return inst;
 }
 
 function setAttribute(dom, name, value) {
@@ -205,6 +211,53 @@ function setAttribute(dom, name, value) {
   }
 }
 
+function _render(vnode) {
+
+  if (vnode === undefined || vnode === null || typeof vnode === 'boolean') vnode = '';
+
+  if (typeof vnode === 'number' || typeof vnode === 'string') {
+    return document.createTextNode(String(vnode));
+  }
+
+  if (typeof vnode.tag === 'function') {
+    var component = createComponent(vnode.tag, vnode.attrs);
+    setComponentProps(component, vnode.attrs);
+    return component.base;
+  }
+
+  var dom = document.createElement(vnode.tag);
+
+  if (vnode.attrs) {
+    Object.keys(vnode.attrs).forEach(function (key) {
+      var value = vnode.attrs[key];
+      setAttribute(dom, key, value);
+    });
+  }
+
+  vnode.children.forEach(function (child) {
+    render(child, dom);
+  });
+
+  return dom;
+}
+
+function render(vnode, container) {
+  var dom = _render(vnode);
+  return container.appendChild(dom);
+}
+},{"../react/Component":"src/react/Component.js"}],"src/react/Component.js":[function(require,module,exports) {
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _render = require('../react-dom/render');
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
 var Component = function () {
   function Component() {
     var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -219,36 +272,147 @@ var Component = function () {
     key: 'setState',
     value: function setState(state) {
       Object.assign(this.state, state);
-      renderComponent(this);
+      (0, _render.renderComponent)(this);
     }
   }]);
 
   return Component;
 }();
 
-function tick() {
-  var element = React.createElement(
-    'div',
-    null,
-    React.createElement(
-      'h1',
-      { style: 'color: red' },
-      'hello, world!'
-    ),
-    React.createElement(
-      'h2',
-      { style: { textDecoration: 'underline' } },
-      'It is ',
-      new Date().toLocaleTimeString(),
-      '.'
-    )
-  );
+exports.default = Component;
+},{"../react-dom/render":"src/react-dom/render.js"}],"src/react/index.js":[function(require,module,exports) {
+'use strict';
 
-  ReactDOM.render(element, document.getElementById('root'));
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _Component = require('./Component.js');
+
+var _Component2 = _interopRequireDefault(_Component);
+
+var _render = require('../react-dom/render.js');
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+exports.default = {
+  Component: _Component2.default,
+  createElement: _render.createElement
+};
+},{"./Component.js":"src/react/Component.js","../react-dom/render.js":"src/react-dom/render.js"}],"src/react-dom/index.js":[function(require,module,exports) {
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _render = require('./render');
+
+exports.default = {
+  render: _render.render
+};
+},{"./render":"src/react-dom/render.js"}],"src/index.js":[function(require,module,exports) {
+'use strict';
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _react = require('./react');
+
+var _react2 = _interopRequireDefault(_react);
+
+var _reactDom = require('./react-dom');
+
+var _reactDom2 = _interopRequireDefault(_reactDom);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; } //当前进展：组件化
+
+
+function Welcome(props) {
+  return _react2.default.createElement(
+    'h1',
+    null,
+    'Hello, ',
+    props.name
+  );
 }
 
-setInterval(tick, 1000);
-},{}],"../../.nvm/versions/node/v9.7.0/lib/node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+var Counter = function (_React$Component) {
+  _inherits(Counter, _React$Component);
+
+  function Counter(props) {
+    _classCallCheck(this, Counter);
+
+    var _this = _possibleConstructorReturn(this, (Counter.__proto__ || Object.getPrototypeOf(Counter)).call(this, props));
+
+    _this.state = {
+      num: 1
+    };
+    _this.onClick = _this.onClick.bind(_this);
+    return _this;
+  }
+
+  _createClass(Counter, [{
+    key: 'componentWillUpdate',
+    value: function componentWillUpdate() {
+      console.log('update');
+    }
+  }, {
+    key: 'componentWillMount',
+    value: function componentWillMount() {
+      console.log('will mount');
+    }
+  }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      console.log('did mount');
+    }
+  }, {
+    key: 'onClick',
+    value: function onClick() {
+      var num = this.state.num + 1;
+      this.setState({
+        num: num
+      });
+    }
+  }, {
+    key: 'render',
+    value: function render() {
+      return _react2.default.createElement(
+        'div',
+        null,
+        _react2.default.createElement(
+          'h1',
+          null,
+          'num: ',
+          this.state.num
+        ),
+        _react2.default.createElement(
+          'button',
+          { onClick: this.onClick },
+          'add'
+        )
+      );
+    }
+  }]);
+
+  return Counter;
+}(_react2.default.Component);
+
+_reactDom2.default.render(_react2.default.createElement(
+  'div',
+  null,
+  _react2.default.createElement(Welcome, { name: 'junlong' }),
+  _react2.default.createElement(Welcome, { name: 'sara' }),
+  _react2.default.createElement(Welcome, { name: 'laurd' }),
+  _react2.default.createElement(Counter, null)
+), document.getElementById('root'));
+},{"./react":"src/react/index.js","./react-dom":"src/react-dom/index.js"}],"../../../../usr/local/lib/node_modules/parcel/lib/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -277,7 +441,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62543' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '62318' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
@@ -418,5 +582,5 @@ function hmrAccept(bundle, id) {
     return hmrAccept(global.parcelRequire, id);
   });
 }
-},{}]},{},["../../.nvm/versions/node/v9.7.0/lib/node_modules/parcel/src/builtins/hmr-runtime.js","src/index.js"], null)
-//# sourceMappingURL=/src.d07fcad2.map
+},{}]},{},["../../../../usr/local/lib/node_modules/parcel/lib/builtins/hmr-runtime.js","src/index.js"], null)
+//# sourceMappingURL=/src.56f3d125.map

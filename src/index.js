@@ -1,75 +1,50 @@
-const React = {
-  createElement
+//当前进展：组件化
+import React from './react';
+import ReactDOM from './react-dom';
+
+function Welcome(props) {
+  return <h1>Hello, {props.name}</h1>;
 }
 
-const ReactDOM = {
-  render: (vnode, container) => {
-    container.innerHTML = "";
-    return render(vnode, container);
-  }
-}
-
-function createElement(tag, attrs, ...children) {
-  return { tag, attrs, children };
-}
-
-function render(vnode, container) {
-  if(typeof vnode === 'string') {
-    const textNode = document.createTextNode(vnode);
-    return container.appendChild(textNode);
+class Counter extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      num: 1
+    };
+    this.onClick = this.onClick.bind(this);
   }
 
-  const dom = document.createElement(vnode.tag);
+  componentWillUpdate() {
+    console.log('update');
+  }
 
-  if(vnode.attrs) {
-    Object.keys(vnode.attrs).forEach(key => {
-      const value = vnode.attrs[key];
-      setAttribute(dom, key, value);
+  componentWillMount(){
+    console.log('will mount');
+  }
+
+  componentDidMount() {
+    console.log('did mount');
+  }
+
+  onClick() {
+    const num = this.state.num + 1;
+    this.setState({
+      num 
     });
   }
 
-  vnode.children.forEach(child => {
-    render(child, dom);
-  });
-  
-  return container.appendChild(dom);
-}
-
-function setAttribute(dom, name, value) {
-  if(name === 'className') name = 'class';
-
-  if(/on\w+/.test(name)){
-    name = name.toLowerCase();
-    dom[name] = value || '';
-  } else if(name==='style') {
-    if(!value || typeof value === 'string'){
-      dom.style.cssText = value||'';
-    } else if(value && typeof value === 'object'){
-      for(let name in value) {
-        dom.style[name] = value[name];
-      }
-    } else {
-      if(name in dom){
-        dom[name] = value||'';
-      }
-      if(value){
-        dom.setAttribute(name, value);
-      } else {
-        dom.removeAttribute(name, value);
-      }
-    }
+  render() {
+    return <div>
+      <h1>num: {this.state.num}</h1>
+      <button onClick={this.onClick}>add</button>
+    </div>;
   }
 }
 
-function tick() {
-  const element = (
-    <div>
-      <h1 style="color: red">hello, world!</h1>
-      <h2 style={{textDecoration: 'underline'}}>It is {new Date().toLocaleTimeString()}.</h2>
-    </div>
-  );
-
-  ReactDOM.render(element, document.getElementById('root'));
-}
-
-setInterval(tick, 1000);
+ReactDOM.render(<div>
+  <Welcome name="junlong" />
+  <Welcome name="sara" />
+  <Welcome name="laurd" />
+  <Counter />
+</div>, document.getElementById('root'));
